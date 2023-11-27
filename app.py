@@ -62,7 +62,12 @@ def precipitation():
     """Return a list of precipitation (prcp)and date (date) data"""
     
     # Create new variable to store results from query to Measurement table for prcp and date columns
-    precipitation_query_results = session.query(Measurement.prcp, Measurement.date).all()
+    results_date=session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    str_date=list(np.ravel(results_date))[0]
+    latest_date=dt.datetime.strptime(str_date,"%Y-%m-%d")
+    year_back=latest_date-dt.timedelta(days=366)
+    #precipitation_query_results = session.query(Measurement.prcp, Measurement.date).all()
+    precipitation_query_results=session.query(Measurement.date, Measurement.prcp).order_by(Measurement.date.desc()).filter(Measurement.date>=year_back).all()
 
     # Close session
     session.close()
@@ -105,72 +110,62 @@ def stations():
     return jsonify(all_station)
 
 @app.route("/api/v1.0/tobs")
-def tempartureobs():
-   
-
-    """Return a list of all temparture observation"""
-    # Calculate the date 1 year ago from the last data point in the database
-    results_date=session.query(Measurement.date).order_by(Measurement.date.desc()).first()
-    str_date=list(np.ravel(results_date))[0]
-    latest_date=dt.datetime.strptime(str_date,"%Y-%m-%d")
-    year_back=latest_date-dt.timedelta(days=366)
-# Perform a query to retrieve the data and precipitation scores
-    results=session.query(Measurement.date, Measurement.tobs).order_by(Measurement.date.desc()).\
-            filter(Measurement.date>=year_back).all()
-    session.close()
-    all_temperature=[]
-    for tobs,date in results:
-        tobs_dict={}
-        tobs_dict['date']=date
-        tobs_dict['tobs']=tobs
-        all_temperature.append(tobs_dict)
-    return jsonify(all_temperature)
-
-# This function called `calc_temps` will accept start date and end date in the format '%Y-%m-%d' 
-# and return the minimum, average, and maximum temperatures for that range of dates
-@app.route("/api/v1.0/<start>/<end>")
-def calc_temps(start, end):
-    # Create our session (link) from Python to the DB
+def tobs():
     session = Session(engine)
-    """TMIN, TAVG, and TMAX for a list of dates.
     
-    Args:
-        start_date (string): A date string in the format %Y-%m-%d
-        end_date (string): A date string in the format %Y-%m-%d
-        
-    Returns:
-        TMIN, TAVE, and TMAX
-    """
+    """Return a list of dates and temps observed for the most active station for the last year of data from the database""" 
+    # Create query to find the last date in the database
     
-    results=session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-                filter(Measurement.date >= start).filter(Measurement.date <= end).all()
-    session.close()
-    temp_obs={}
-    temp_obs["Min_Temp"]=results[0][0]
-    temp_obs["avg_Temp"]=results[0][1]
-    temp_obs["max_Temp"]=results[0][2]
-    return jsonify(temp_obs)
+    last_year_query_results = session.query(Measurement.date).\
+        order_by(Measurement.date.desc()).first() 
 
-@app.route("/api/v1.0/<start>")
-def calc_temps_sd(start):
-    # Create our session (link) from Python to the DB
-    session = Session(engine)
-    """TMIN, TAVG, and TMAX for a list of dates.
+    print(last_year_query_results)
+    # last_year_date returns row ('2017-08-23',), use this to create a date time object to find start query date 
     
-    Args:
-        start_date (string): A date string in the format %Y-%m-%d
+    # check to see if last year was correctly returned by creating dictionary to return last year value to browser in JSON format
+    last_year_query_values = []
+    for date in last_year_query_results:
+        last_year_dict = {}
+        last_year_dict["date"] = date
+        last_year_query_values.append(last_year_dict) 
+    print(last_year_query_values)
+    # returns: [{'date': '2017-08-23'}]
+
+    # Create query_start_date by finding the difference between date time object of "2017-08-23" - 365 days
+    query_start_date = dt.date(2017, 8, 23)-dt.timedelta(days =365) 
+    print(query_start_date) 
+    # returns: 2016-08-23 
+
+    # Create query to find most active station in the database 
+
+    active_station= session.query(Measurement.station, func.count(Measurement.station)).\
+        order_by(func.count(Measurement.station).desc()).\
+        group_by(Measurement.station).first()
+    most_active_station = active_station[0] 
+
+    session.close() 
+     # active_station returns: ('USC00519281', 2772), index to get the first position to isolate most active station number
+    print(most_active_station)
+    # returns: USC00519281  
+
+    # Create a query to find dates and tobs for the most active station (USC00519281) within the last year (> 2016-08-23)
+
+    dates_tobs_last_year_query_results = session.query(Measurement.date, Measurement.tobs, Measurement.station).\
+        filter(Measurement.date > query_start_date).\
+        filter(Measurement.station == most_active_station) 
+    
+
+    # Create a list of dates,tobs,and stations that will be appended with dictionary values for date, tobs, and station number queried above
+    dates_tobs_last_year_query_values = []
+    for date, tobs, station in dates_tobs_last_year_query_results:
+        dates_tobs_dict = {}
+        dates_tobs_dict["date"] = date
+        dates_tobs_dict["tobs"] = tobs
+        dates_tobs_dict["station"] = station
+        dates_tobs_last_year_query_values.append(dates_tobs_dict)
         
-    Returns:
-        TMIN, TAVE, and TMAX
-    """
-    
-    results=session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-                filter(Measurement.date >= start).all()
-    session.close()
-    temp_obs={}
-    temp_obs["Min_Temp"]=results[0][0]
-    temp_obs["avg_Temp"]=results[0][1]
-    temp_obs["max_Temp"]=results[0][2]
-    return jsonify(temp_obs)
-if __name__ == '__main__':
-    app.run(debug=True)
+    return jsonify(dates_tobs_last_year_query_values) 
+# Create a route that when given the start date only, returns the minimum, average, and maximum temperature observed for all dates greater than or equal to the start date entered by a user
+
+
+
