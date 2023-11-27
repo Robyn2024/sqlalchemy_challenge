@@ -28,7 +28,7 @@ Station = Base.classes.station
 
 
 # Create our session (link) from Python to the DB
-
+session = Session(engine)
 
 #################################################
 # Flask Setup
@@ -97,8 +97,7 @@ def stations():
 
 @app.route("/api/v1.0/tobs")
 def tempartureobs():
-    # Create our session (link) from Python to the DB
-    session = Session(engine)
+   
 
     """Return a list of all temparture observation"""
     # Calculate the date 1 year ago from the last data point in the database
