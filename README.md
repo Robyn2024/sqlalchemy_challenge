@@ -2,6 +2,8 @@
 
 Congratulations! You've decided to treat yourself to a long holiday vacation in Honolulu, Hawaii. To help with your trip planning, you decide to do a climate analysis about the area. The following sections outline the steps that you need to take to accomplish this task.
 
+![surfs-up.png](Images/surfs-up.png)
+
 # Part 1: Analyze and Explore the Climate Data
 
 In this section, you’ll use Python and SQLAlchemy to do a basic climate analysis and data exploration of your climate database. Specifically, you’ll use SQLAlchemy ORM queries, Pandas, and Matplotlib. To do so, complete the following steps:
@@ -30,11 +32,11 @@ Sort the DataFrame values by "date".
 
 Plot the results by using the DataFrame plot method, as the following image shows:
 
-A screenshot depicts the plot.
+![precipitation](Images/precipitation.png)
 
 Use Pandas to print the summary statistics for the precipitation data.
 
-# Station Analysis
+## Station Analysis
 
 Design a query to calculate the total number of stations in the dataset.
 
@@ -54,7 +56,7 @@ Query the previous 12 months of TOBS data for that station.
 
 Plot the results as a histogram with bins=12, as the following image shows:
 
-A screenshot depicts the histogram.
+  ![station-histogram](Images/station-histogram.png).
 
 Close your session.
 
@@ -91,3 +93,6 @@ For a specified start, calculate TMIN, TAVG, and TMAX for all the dates greater 
 
 For a specified start date and end date, calculate TMIN, TAVG, and TMAX for the dates from the start date to the end date, inclusive.
 
+### Copyright
+
+Trilogy Education Services © 2019. All Rights Reserved.
