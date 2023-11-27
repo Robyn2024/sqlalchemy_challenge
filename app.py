@@ -59,20 +59,29 @@ def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of all precipitation and date"""
-    # Query all precipitation and date
-    results = session.query(Measurement.date,Measurement.prcp).all()
+    """Return a list of precipitation (prcp)and date (date) data"""
+    
+    # Create new variable to store results from query to Measurement table for prcp and date columns
+    precipitation_query_results = session.query(Measurement.prcp, Measurement.date).all()
 
+    # Close session
     session.close()
 
-    # Convert list of tuples into dictionary
-    all_precepitation=[]
-    for date,prcp in results:
+    # Create a dictionary from the row data and append to a list of all_passengers
+        # 1. Create an empty list of precipitation query values 
+        # 2. Create for loop to iterate through query results (precipitation_query_results) 
+        # 3. Create dictionary with key "precipitation" set to prcp from precipitation_query_results and key "date" to date from precipitation_query_results
+        # 4. Append values from precipitation_dict to your original empty list precipitation_query_values 
+        # 5. Return JSON format of your new list that now contains the dictionary of prcp and date values to your browser
+    
+    precipitaton_query_values = []
+    for prcp, date in precipitation_query_results:
         precipitation_dict = {}
-        precipitation_dict[date] = prcp
-        all_precepitation.append(precipitation_dict)
+        precipitation_dict["precipitation"] = prcp
+        precipitation_dict["date"] = date
+        precipitaton_query_values.append(precipitation_dict)
 
-    return jsonify(all_precepitation)
+    return jsonify(precipitaton_query_values) 
 
 @app.route("/api/v1.0/stations")
 def stations():
