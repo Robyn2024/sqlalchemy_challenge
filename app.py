@@ -165,7 +165,65 @@ def tobs():
         dates_tobs_last_year_query_values.append(dates_tobs_dict)
         
     return jsonify(dates_tobs_last_year_query_values) 
+
+
 # Create a route that when given the start date only, returns the minimum, average, and maximum temperature observed for all dates greater than or equal to the start date entered by a user
 
+@app.route("/api/v1.0/<start>")
+# Define function, set "start" date entered by user as parameter for start_date decorator 
+def start_date(start):
+    session = Session(engine) 
 
+    latest_date=dt.datetime.strptime(start,"%Y-%m-%d")
+    """Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start date."""
 
+    # Create query for minimum, average, and max tobs where query date is greater than or equal to the date the user submits in URL
+    start_date_tobs_results = session.query(func.min(Measurement.tobs),func.avg(Measurement.tobs),func.max(Measurement.tobs)).\
+        filter(Measurement.date >= latest_date).all()
+    
+    session.close() 
+
+    # Create a list of min,max,and average temps that will be appended with dictionary values for min, max, and avg tobs queried above
+    start_date_tobs_values =[]
+    for min, avg, max in start_date_tobs_results:
+        start_date_tobs_dict = {}
+        start_date_tobs_dict["min"] = min
+        start_date_tobs_dict["average"] = avg
+        start_date_tobs_dict["max"] = max
+        start_date_tobs_values.append(start_date_tobs_dict)
+    
+    return jsonify(start_date_tobs_values)
+
+@app.route("/api/v1.0/<start>/<end>")
+
+# Define function, set start and end dates entered by user as parameters for start_end_date decorator
+def Start_end_date(start, end):
+    session = Session(engine)
+
+    start_date=dt.datetime.strptime((start),"%Y-%m-%d")
+    end_date=dt.datetime.strptime((end),"%Y-%m-%d")
+    """Return a list of min, avg and max tobs between start and end dates entered"""
+    
+    # Create query for minimum, average, and max tobs where query date is greater than or equal to the start date and less than or equal to end date user submits in URL
+
+    start_end_date_tobs_results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start_date).\
+        filter(Measurement.date <= end_date).all()
+
+    session.close()
+  
+    # Create a list of min,max,and average temps that will be appended with dictionary values for min, max, and avg tobs queried above
+    start_end_tobs_date_values = []
+    for min, avg, max in start_end_date_tobs_results:
+        start_end_tobs_date_dict = {}
+        start_end_tobs_date_dict["min_temp"] = min
+        start_end_tobs_date_dict["avg_temp"] = avg
+        start_end_tobs_date_dict["max_temp"] = max
+        start_end_tobs_date_values.append(start_end_tobs_date_dict) 
+    
+
+    return jsonify(start_end_tobs_date_values)
+   
+if __name__ == '__main__':
+    app.run(debug=True) 
+   
